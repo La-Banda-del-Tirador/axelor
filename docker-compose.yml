@@ -1,0 +1,82 @@
+services:
+
+  app:
+    image: axelor/aos-ce:${AXELOR_VERSION:-8.5}
+    restart: unless-stopped
+    environment:
+      # Base de datos
+      - PGHOST=postgres
+      - PGPORT=5432
+      - PGUSER=${POSTGRES_USER:-axelor}
+      - PGPASSWORD=${POSTGRES_PASSWORD:-axelor}
+      - PGDATABASE=${POSTGRES_DB:-axelor}
+      # Aplicación
+      - APP_USER=${APP_USER:-admin}
+      - APP_PASS=${APP_PASS:-admin}
+      - APP_NAME=${APP_NAME:-Mi ERP}
+      - APP_LANGUAGE=${APP_LANGUAGE:-es}
+      - APP_DEMO_DATA=${APP_DEMO_DATA:-true}
+      - APP_MODE=dev
+      - LOG_LEVEL=INFO
+      - ENABLE_QUARTZ=true
+      # Memoria JVM
+      - JAVA_XMS=512m
+      - JAVA_XMX=${JAVA_XMX:-2048m}
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - app_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 1800s
+    networks:
+      - axelor_net
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-axelor}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-axelor}
+      - POSTGRES_DB=${POSTGRES_DB:-axelor}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-axelor} -d ${POSTGRES_DB:-axelor}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - axelor_net
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@local.dev}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - axelor_net
+
+volumes:
+  app_data:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  axelor_net:
+    driver: bridge
