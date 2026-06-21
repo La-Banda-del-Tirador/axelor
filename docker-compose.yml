@@ -29,6 +29,11 @@ services:
         condition: service_healthy
     volumes:
       - app_data:/data
+      # ── Branding: reemplaza logos sin rebuild ──────────────────────────
+      - ./branding/logo.png:/home/axelor/tomcat/webapps/ROOT/img/axelor.png:ro
+      - ./branding/logo-dark.png:/home/axelor/tomcat/webapps/ROOT/img/axelor-dark.png:ro
+      - ./branding/logo-bpm.png:/home/axelor/tomcat/webapps/ROOT/bpm/axelor.png:ro
+      - ./branding/favicon.ico:/home/axelor/tomcat/webapps/ROOT/ico/favicon.ico:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
